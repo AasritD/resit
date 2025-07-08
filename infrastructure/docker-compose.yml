@@ -1,0 +1,54 @@
+version: '3.8'
+services:
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  mlflow:
+    image: mlflow:latest
+    ports:
+      - "5000:5000"
+    command: mlflow server \
+      --backend-store-uri sqlite:///mlflow.db \
+      --default-artifact-root ./mlruns
+    volumes:
+      - ./mlruns:/mlruns
+
+  inference:
+    build: ../services/inference
+    env_file: .env
+    depends_on: [db]
+    ports:
+      - "8001:8000"
+
+  training:
+    build: ../services/training
+    env_file: .env
+    depends_on: [db, mlflow]
+    ports:
+      - "8002:8000"
+
+  billing:
+    build: ../services/billing
+    env_file: .env
+    depends_on: [db]
+    ports:
+      - "8003:8000"
+
+  users:
+    build: ../services/users
+    env_file: .env
+    depends_on: [db]
+    ports:
+      - "8004:8000"
+
+volumes:
+  db_data:
+  mlruns:

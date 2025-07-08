@@ -1,0 +1,10 @@
+<!DOCTYPE html><html><head><title>Upload & Predict</title></head><body>
+<h1>MLaaS Inference</h1>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %} {{form.as_p}} <button type="submit">Submit</button>
+</form>
+{% if prediction %}
+  <h2>Prediction: {{prediction}}</h2>
+  <h3>SHAP values:</h3><pre>{{shap}}</pre>
+{% endif %}
+</body></html>

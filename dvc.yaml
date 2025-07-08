@@ -1,0 +1,17 @@
+stages:
+  ingest:
+    cmd: python services/training/app/training_app/scripts/ingest.py
+    deps:
+      - data/Synthetic_Data_For_Students.csv
+      - services/training/app/training_app/scripts/ingest.py
+    outs:
+      - data/cleaned_data.npz
+      - services/training/app/training_app/models/preprocessor.joblib
+
+  train:
+    cmd: python services/training/app/training_app/scripts/train.py
+    deps:
+      - data/cleaned_data.npz
+      - services/training/app/training_app/scripts/train.py
+    outs:
+      - mlruns/
