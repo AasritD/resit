@@ -1,4 +1,6 @@
 from django.utils import timezone
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -6,6 +8,7 @@ from .models import UsageRecord, Invoice
 from .serializers import UsageRecordSerializer, InvoiceSerializer
 from reportlab.pdfgen import canvas
 from io import BytesIO
+
 
 class UsageViewSet(viewsets.ModelViewSet):
     queryset = UsageRecord.objects.all().order_by('-timestamp')
@@ -35,3 +38,11 @@ class InvoiceViewSet(viewsets.ViewSet):
         buffer.seek(0)
         inv_pdf=buffer.read()
         return Response({'invoice_id':inv.id,'pdf':inv_pdf},status=status.HTTP_201_CREATED)
+
+@login_required
+def dashboard(request):
+    """
+    Simple billing dashboard view.
+    URL: /billing/dashboard/
+    """
+    return render(request, 'billing/dashboard.html')

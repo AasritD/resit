@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-WORKDIR /mlflow
+WORKDIR /mlflow    # or /app for training service
 
 # Use pip install flags: no cache, retries, increased timeout
 COPY requirements.txt .

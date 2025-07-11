@@ -11,6 +11,10 @@ INSTALLED_APPS = [
   'rest_framework','inference_app',
 ]
 
+# Use BigAutoField by default for primary keys
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
 MIDDLEWARE = [
   'django.middleware.security.SecurityMiddleware','django.contrib.sessions.middleware.SessionMiddleware',
   'django.middleware.common.CommonMiddleware','django.middleware.csrf.CsrfViewMiddleware',
@@ -20,6 +24,24 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'inference_project.urls'
 WSGI_APPLICATION = 'inference_project.wsgi.application'
+
+# TEMPLATES config required for the admin site
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [],            # you can add project-wide template dirs here
+        'APP_DIRS': True,      # look for templates inside each app
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+
 
 DATABASES = {
   'default': {

@@ -44,3 +44,11 @@ def upload_ui(request):
     else:
         form=UploadForm()
     return render(request,'inference/upload.html',{'form':form,'prediction':pred,'shap':shap_vals})
+
+@login_required
+def dashboard(request):
+    """
+    Simple inference dashboard view.
+    URL: /inference/dashboard/
+    """
+    return render(request, 'inference/dashboard.html')
