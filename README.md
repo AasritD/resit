@@ -1,6 +1,10 @@
 # MLaaS Resit Project
 
-**A Machine-Learning-as-a-Service (MLaaS) prototype** demonstrating both AI functionality (inference & training) and distributed software-development practices (containerization, CI/CD).
+**Machine-Learning-as-a-Service (MLaaS) Prototype**  
+A distributed microservices architecture paired with an Advanced AI pipeline for predicting insurance claim settlement values. Demonstrates:
+
+- **Distributed & Enterprise Software**: containerized microservices (Auth, Billing, Training, Inference, Frontend), orchestrated with Docker Compose, plus CI/CD.  
+- **Advanced AI**: DVC-managed data ingestion, hyperparameter tuning, fairness analysis, SHAP explainability, and an interactive Jupyter notebook demo.
 
 ---
 
@@ -10,197 +14,145 @@
 2. [High-Level Architecture](#high-level-architecture)  
 3. [Directory Structure](#directory-structure)  
 4. [Services & Modules](#services--modules)  
-   - [AI Module](#ai-module)  
-   - [Auth Module](#auth-module)  
-   - [Billing Module](#billing-module)  
-   - [Training Module](#training-module)  
-   - [Frontend](#frontend)  
-5. [Infrastructure & Orchestration](#infrastructure--orchestration)  
-6. [Continuous Integration & Delivery](#continuous-integration--delivery)  
-7. [Getting Started](#getting-started)  
-8. [How to Contribute](#how-to-contribute)  
-9. [License](#license)  
+5. [Ethics & GDPR](#ethics--gdpr)  
+6. [Setup](#setup)  
+7. [Interactive Notebook](#interactive-notebook)  
+8. [Infrastructure & Orchestration](#infrastructure--orchestration)  
+9. [Continuous Integration & Delivery](#continuous-integration--delivery)  
+10. [Contributing](#contributing)  
+11. [License](#license)  
 
 ---
 
-## 🚀 Project Overview
+## 1. Project Overview
 
-This project implements a **Machine-Learning-as-a-Service** platform with:
+This repo implements:
 
-- **Inference Service**: Users upload data and receive model predictions.  
-- **Training Service**: Engineers run offline training jobs, track experiments and publish new models.  
-- **Billing Service**: Tracks usage of the inference API and generates invoices.  
-- **Auth Service**: Manages users, roles (admin / engineer / finance / end-user), and GDPR-compliant endpoints.  
-- **Frontend SPA**: A React-based dashboard unifying the above into a single user interface.  
-
-All services run in isolated Docker containers, orchestrated via Docker Compose. A PostgreSQL database service holds shared data (users, logs, billing records, experiment metadata).
+- A **microservices** backend for user management, billing, model training & inference.  
+- An **AI service** that ingests claims data, trains regressors (DecisionTree, XGBoost, RandomForest), evaluates fairness by age × gender, and produces SHAP explanations.  
+- A **React frontend** (in `services/frontend/`) for interacting with the inference API.  
+- A **Jupyter notebook** (`notebooks/master_notebook.ipynb`) tying together data loading, preprocessing, tuning, fairness checks, SHAP plots, and a live prediction demo.
 
 ---
 
-## 🏗 High-Level Architecture
+## 2. High-Level Architecture
 
-```
-                                   ┌────────────┐
-                                   │  Frontend  │  ←─ React/Tailwind SPA
-                                   └────────────┘
-                                         │
-┌──────────┐   ┌──────────────┐   ┌───────────────┐   ┌───────────────┐
-│ Inference│   │  Training    │   │   Billing     │   │     Auth      │
-│  Service │   │  Service     │   │   Service     │   │   Service     │
-└──────────┘   └──────────────┘   └───────────────┘   └───────────────┘
-       │              │                  │                   │
-       └───────►──────┴──────────►───────┴──────────►────────┘
-                         PostgreSQL Database
-```
-
-- Each microservice is a standalone Django + DRF project, with its own models, serializers, views and URLs.
-- The **Docker Compose** file brings up:
-  - Four service containers  
-  - One `db` container for PostgreSQL  
+![Architecture Diagram](docs/architecture.png)  
+*(See `docs/architecture.md` for a UML component diagram and rationale.)*
 
 ---
 
-## 📂 Directory Structure
+## 3. Directory Structure
 
 ```
-mlaas/                         ← Repo root
-├── docs/                     ← Templates & specifications
-├── data/                     ← Synthetic CSV dataset
-├── infrastructure/           ← Docker Compose + env files
-├── .github/                  ← CI/CD workflows
-│   └── workflows/
-│       ├── ci.yml
-│       └── cd.yml
-├── services/                 ← All backend microservices
-│   ├── inference/             
-│   ├── training/              
-│   ├── billing/               
-│   └── users/                 
-├── frontend/                 ← React Single-Page App
-└── README.md                 ← This file
+/project-root
+├── data/                       # Raw & DVC-tracked datasets  
+├── docs/                       # GDPR, architecture, ethics  
+├── notebooks/                  # Master Jupyter notebook demo  
+├── services/
+│   ├── auth/                   # Django-DRF auth service  
+│   ├── billing/                # Billing microservice  
+│   ├── training/               # Model training pipeline  
+│   ├── inference/              # Model inference service  
+│   └── frontend/               # React SPA  
+├── tests/                      # pytest unit & integration tests  
+├── dvc.yaml                    # DVC pipeline definition  
+├── requirements.txt            # Python dependencies (frozen)  
+├── Dockerfile / docker-compose.yml  
+├── README.md  
+└── .github/workflows/ci.yml    # CI/CD pipeline  
 ```
 
 ---
 
-## 🔧 Services & Modules
+## 4. Services & Modules
 
-### AI Module
+- **AI Module** (`services/training/` & `services/inference/`)  
+- **Auth Module** (`services/auth/`)  
+- **Billing Module** (`services/billing/`)  
+- **Training Module** (`services/training/`)  
+- **Frontend** (`services/frontend/`)  
 
-#### 1. Inference Service  
-- **Path**: `services/inference/`  
-- **Purpose**:  
-  - Accept user file uploads (text/image/video/audio).  
-  - Run the latest model to produce a prediction.  
-  - Log the input, model artifact used, and prediction in the database.  
-- **Key files**:  
-  - `models.py` (ModelArtifact, InferenceLog)  
-  - `serializers.py` (DRF serializers)  
-  - `views.py` (upload & predict endpoint)  
-  - `templates/inference/upload.html` (basic upload form)  
-
-#### 2. Training Service  
-- **Path**: `services/training/`  
-- **Purpose**:  
-  - Ingest the synthetic insurance-claims CSV.  
-  - Train Decision Trees, XGBoost or hybrid models.  
-  - Track experiments via DRF and/or MLflow.  
-- **Key files**:  
-  - `scripts/ingest.py` & `scripts/train.py` (CLI training jobs)  
-  - `models.py` (ExperimentRun, Metrics)  
-  - `views.py` (trigger retrain, list past runs)  
+Each backend is a standalone Django + DRF app, containerized via Docker, with its own CI checks.
 
 ---
 
-### Supporting Modules
+## 5. Ethics & GDPR
 
-#### 3. Billing Service  
-- **Path**: `services/billing/`  
-- **Purpose**:  
-  - Count inference calls per user.  
-  - Generate invoices or billing records in PDF/JSON.  
-  - Expose a finance dashboard for admins.  
-
-#### 4. Auth Service  
-- **Path**: `services/users/`  
-- **Purpose**:  
-  - Manage user accounts and roles (end-user / engineer / finance / admin).  
-  - Issue JWT or OAuth2 tokens.  
-  - Provide GDPR features (data export, right-to-be-forgotten).  
+See [docs/gdpr.md](docs/gdpr.md) for our data-protection, anonymisation, and fairness-testing procedures, aligned with the ICO’s AI & Data Protection Toolkit.
 
 ---
 
-### Frontend
+## 6. Setup
 
-- **Path**: `frontend/`  
-- **Tech**: React + Vite + Tailwind (or CRA)  
-- **Purpose**:  
-  - Unified UI for Inference, Training, Billing, and User management.  
-  - Interactive charts (e.g. model performance, billing summary).  
+Reproduce the environment and run the full pipeline:
 
----
+```bash
+# 1. Clone & enter repo
+git clone https://github.com/AasritD/resit.git
+cd resit
 
-## 🛠 Infrastructure & Orchestration
+# 2. Create & activate a virtual environment
+python -m venv .venv
+# Linux/macOS:
+source .venv/bin/activate
+# Windows (PowerShell):
+.\.venv\Scripts\Activate.ps1
 
-- **Docker Compose** (`infrastructure/docker-compose.yml`):  
-  - Defines one container per service + `db`.  
-  - Exposes ports 8001–8004 for API services, 5432 for the database.  
-- **Environment file** (`infrastructure/.env`):  
-  - Keeps secrets and credentials out of source control.  
+# 3. Install Python dependencies
+pip install --upgrade pip
+pip install -r requirements.txt
 
----
+# 4. (If using DVC)
+dvc pull            # fetch data artifacts
+dvc repro           # run data pipeline
 
-## 🚦 Continuous Integration & Delivery
-
-- **CI** (`.github/workflows/ci.yml`):  
-  - Lints (Flake8), type-checks (mypy), runs unit/integration tests for each microservice on push and PR.  
-- **CD** (`.github/workflows/cd.yml`):  
-  - On merge to `main`, builds Docker images and (optionally) deploys to a staging environment.  
-
----
-
-## 🏁 Getting Started
-
-1. **Clone the repo**  
-   ```bash
-   git clone https://your.git.repo/mlaas.git
-   cd mlaas
-   ```
-
-2. **Set up environment**  
-   - Copy `.env.example` to `.env` and fill in `DB_PASSWORD`, any API keys.
-
-3. **Launch services**  
-   ```bash
-   cd infrastructure
-   docker-compose up --build
-   ```
-
-4. **Browse the APIs**  
-   - Inference:  `http://localhost:8001/api/artifacts/`  
-   - Training:   `http://localhost:8002/api/experiments/`  
-   - Billing:    `http://localhost:8003/api/invoices/`  
-   - Auth:       `http://localhost:8004/api/users/`  
-
-5. **Run tests**  
-   ```bash
-   docker-compose exec inference python app/manage.py test
-   docker-compose exec training python app/manage.py test
-   # etc.
-   ```
+# 5. Launch the notebook or services
+jupyter lab         # run the AI notebook
+docker-compose up   # start all microservices
+```
 
 ---
 
-## 🤝 How to Contribute
+## 7. Interactive Notebook
 
-1. Pick an issue or module you want to work on.  
+🔗 [Open `notebooks/master_notebook.ipynb`](notebooks/master_notebook.ipynb)  
+Walks through data loading, preprocessing, tuning, fairness analysis, SHAP explainability, and a live prediction demo.
+
+---
+
+## 8. Infrastructure & Orchestration
+
+- **Docker Compose** (`docker-compose.yml`) spins up:  
+  - PostgreSQL, Redis, Nginx (reverse proxy)  
+  - Auth, Billing, Training, Inference, Frontend containers  
+- **Health endpoints** on each service for readiness checks.
+
+---
+
+## 9. Continuous Integration & Delivery
+
+Configured via **GitHub Actions** (`.github/workflows/ci.yml`):
+
+- Linting & type-checking (flake8, mypy)  
+- pytest unit & integration tests  
+- DVC pull & repro  
+- Jupyter notebook execution & artifact upload  
+
+---
+
+## 10. Contributing
+
+1. Fork & clone the repo.  
 2. Create a feature branch:  
    ```bash
    git checkout -b feature/awesome-improvement
-   ```
-3. Commit your changes, push, and open a Pull Request.  
-4. CI will run automatically; code reviews are appreciated.  
+   ```  
+3. Make changes, commit, push, and open a Pull Request.  
+4. CI will run automatically; please ensure all tests & the notebook pass.
 
 ---
 
-## Ethics & GDPR  
-See [docs/gdpr.md](docs/gdpr.md) for details on data protection, anonymisation, and fairness checks.  
+## 11. License
+
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
