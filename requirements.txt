@@ -5,4 +5,4 @@ xgboost>=1.7
 shap>=0.42
 jupyterlab
 matplotlib
-# add any others for the project needs, e.g. dvc, pytest, etc.
+# …etc.
