@@ -1,0 +1,8 @@
+pandas>=1.5
+numpy>=1.24
+scikit-learn>=1.2
+xgboost>=1.7
+shap>=0.42
+jupyterlab
+matplotlib
+# add any others for the project needs, e.g. dvc, pytest, etc.
