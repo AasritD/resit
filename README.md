@@ -201,3 +201,6 @@ mlaas/                         ← Repo root
 4. CI will run automatically; code reviews are appreciated.  
 
 ---
+
+## Ethics & GDPR  
+See [docs/gdpr.md](docs/gdpr.md) for details on data protection, anonymisation, and fairness checks.  

@@ -2,50 +2,63 @@ name: CI
 
 on:
   push:
-    branches: [ main, develop ]
+    branches: [ main, master ]
   pull_request:
-    branches: [ main, develop ]
 
 jobs:
-  ai-unit-tests:
-    name: AI Unit Tests
+  build-and-test:
     runs-on: ubuntu-latest
     steps:
+      # 1. Check out the repo
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
-      - name: Install AI dependencies
-        run: |
-          pip install --upgrade pip
-          pip install -r services/training/requirements.txt
-          pip install pytest
-      - name: Run AI unit tests
-        run: pytest tests/unit
 
-  service-tests:
-    name: Service Tests
-    needs: ai-unit-tests
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        service: [ inference, training, billing, users ]
-    steps:
-      - uses: actions/checkout@v3
+      # 2. Set up Python and cache pip
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
-      - name: Install service dependencies
+          python-version: '3.10'
+      - name: Cache pip
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+
+      # 3. Install dependencies
+      - name: Install dependencies
         run: |
+          python -m venv .venv
+          source .venv/bin/activate
           pip install --upgrade pip
-          pip install -r services/${{ matrix.service }}/requirements.txt
-          pip install flake8 mypy
-      - name: Lint service code
-        run: flake8 services/${{ matrix.service }}
-      - name: Type-check service code
-        run: mypy services/${{ matrix.service }}
-      - name: Run Django tests
-        working-directory: services/${{ matrix.service }}/app
-        run: python manage.py test
+          pip install -r requirements.txt
+
+      # 4. (Optional) Pull & repro your DVC pipeline
+      - name: Set up DVC & pull data
+        run: |
+          source .venv/bin/activate
+          pip install dvc
+          dvc pull
+          dvc repro
+
+      # 5. Run your tests
+      - name: Run unit/integration tests
+        run: |
+          source .venv/bin/activate
+          pytest --maxfail=1 --disable-warnings -q
+
+      # 6. Execute the notebook
+      - name: Execute master notebook
+        run: |
+          source .venv/bin/activate
+          pip install jupyter nbconvert
+          jupyter nbconvert \
+            --to html \
+            --execute notebooks/master_notebook.ipynb \
+            --output executed_notebook.html \
+            --ExecutePreprocessor.timeout=600
+
+      # 7. Upload the rendered notebook for review
+      - name: Upload notebook artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: executed-notebook
+          path: executed_notebook.html

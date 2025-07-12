@@ -5,4 +5,6 @@ xgboost>=1.7
 shap>=0.42
 jupyterlab
 matplotlib
+jupyter
+nbconvert
 # …etc.
