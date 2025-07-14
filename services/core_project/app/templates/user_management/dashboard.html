@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Your Dashboard — MLaaS{% endblock %}
+
+{% block content %}
+  <div class="row gy-4">
+    <div class="col-12">
+      <div class="card p-4">
+        <h1 class="h4">Welcome, {{ user.get_full_name|default:user.username }}!</h1>
+        <p class="text-muted">Your role: <strong>{{ user.get_role_display }}</strong></p>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card p-3">
+        <h2 class="h6">Quick Links</h2>
+        <ul class="list-unstyled">
+          {% if user.role == 'enduser' %}
+            <li><a href="{% url 'uploads:dashboard' %}">My Uploads</a></li>
+          {% elif user.role == 'aiengineer' %}
+            <li><a href="{% url 'inference:dashboard' %}">Inference Console</a></li>
+          {% endif %}
+        </ul>
+      </div>
+    </div>
+
+    <div class="col-md-6">
+      <div class="card p-3">
+        <h2 class="h6">Recent Activity</h2>
+        <ul class="list-unstyled">
+          {% for log in user.activitylog_set.all|slice:":5" %}
+            <li class="small">{{ log.timestamp|date:"M j, Y P" }} – {{ log.action }}</li>
+          {% empty %}
+            <li class="small text-muted">No recent activity</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </div>
+  </div>
+{% endblock %}

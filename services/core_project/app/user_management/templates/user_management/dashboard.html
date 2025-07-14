@@ -1,9 +1,0 @@
-<!DOCTYPE html>
-<html>
-<head><title>Dashboard</title></head>
-<body>
-  <h1>Welcome, {{ user.username }}!</h1>
-  <p>Your role is: {{ user.get_role_display }}</p>
-  <a href="{% url 'logout' %}">Logout</a>
-</body>
-</html>

@@ -1,109 +1,33 @@
+# infrastructure/docker-compose.yml
 version: '3.8'
+
 services:
   db:
     image: postgres:15
     environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB:   your_db_name
+      POSTGRES_USER: your_db_user
+      POSTGRES_PASSWORD: your_db_password
     volumes:
       - db_data:/var/lib/postgresql/data
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-      interval: 10s
-      retries: 5
 
-  mlflow:
-    image: mlflow:latest
+  web:
+    build:
+      context: ../services/core_project/app
+      dockerfile: Dockerfile
+    command: ["gunicorn", "core_project.wsgi:application", "--bind", "0.0.0.0:8000"]
     ports:
-      - "5000:5000"
-    command: >
-      mlflow server
-        --backend-store-uri sqlite:///mlflow.db
-        --default-artifact-root /mlruns
-    volumes:
-      - mlruns:/mlruns
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
-      interval: 10s
-      retries: 5
-
-  training:
-    build: ../services/training
-    env_file: .env
+      - "8000:8000"
+    environment:
+      DJANGO_DEBUG:        "False"
+      ALLOWED_HOSTS:       "localhost,127.0.0.1"
+      POSTGRES_DB:         your_db_name
+      POSTGRES_USER:       your_db_user
+      DB_PASSWORD:         your_db_password
+      DB_HOST:             db
+      DB_PORT:             "5432"
     depends_on:
-      db:
-        condition: service_healthy
-      mlflow:
-        condition: service_healthy
-    ports:
-      - "8002:8000"
-    command: >
-      bash -lc "\
-        python app/manage.py migrate --noinput && \
-        python services/training/app/training_app/scripts/ingest.py && \
-        python services/training/app/training_app/scripts/train.py && \
-        python app/manage.py runserver 0.0.0.0:8000\
-      "
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8002/api/training/runs/"]
-      interval: 10s
-      retries: 5
-
-  inference:
-    build: ../services/inference
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8001:8000"
-    command: >
-      bash -lc "\
-        python app/manage.py migrate --noinput && \
-        python app/manage.py runserver 0.0.0.0:8000\
-      "
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8001/inference/api/artifacts/"]
-      interval: 10s
-      retries: 5
-
-  billing:
-    build: ../services/billing
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8003:8000"
-    command: >
-      bash -lc "\
-        python app/manage.py migrate --noinput && \
-        python app/manage.py runserver 0.0.0.0:8000\
-      "
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8003/billing/api/usage/"]
-      interval: 10s
-      retries: 5
-
-  users:
-    build: ../services/users
-    env_file: .env
-    depends_on:
-      db:
-        condition: service_healthy
-    ports:
-      - "8004:8000"
-    command: >
-      bash -lc "\
-        python app/manage.py migrate --noinput && \
-        python app/manage.py runserver 0.0.0.0:8000\
-      "
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/api/auth/"]
-      interval: 10s
-      retries: 5
+      - db
 
 volumes:
   db_data:
-  mlruns:

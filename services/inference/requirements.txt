@@ -1,7 +1,0 @@
-Django>=4.2
-djangorestframework
-psycopg2-binary
-joblib
-numpy
-scikit-learn
-shap

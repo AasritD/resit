@@ -16,7 +16,10 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
 
     'rest_framework',
-    'user_management',
+    'user_management.apps.UserManagementConfig',
+    'uploads',
+    'inference_app.apps.InferenceAppConfig',
+    'billing_app.apps.BillingAppConfig',
 ]
 
 AUTH_USER_MODEL = 'user_management.CustomUser'
