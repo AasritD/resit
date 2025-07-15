@@ -1,13 +1,11 @@
-# services/core_project/app/user_management/signals.py
-
 from django.conf import settings
 from django.contrib.auth.signals import user_logged_in, user_logged_out
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .models import ActivityLog
-'''from inference_app.models import InferenceLog
-from billing_app.models import BillableEvent'''
+from inference_app.models import InferenceLog
+from billing_app.models import Invoice
 
 @receiver(user_logged_in)
 def log_login(sender, user, request, **kwargs):
@@ -25,7 +23,7 @@ def log_inference(sender, instance, created, **kwargs):
             action=f"inference: {instance.prediction}"
         )
 
-@receiver(post_save, sender=BillableEvent)
+@receiver(post_save, sender=Invoice)
 def log_billing(sender, instance, created, **kwargs):
     if created:
         ActivityLog.objects.create(

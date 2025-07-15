@@ -15,9 +15,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 
-    'rest_framework',
     'user_management.apps.UserManagementConfig',
-    'uploads',
+    'uploads.apps.UploadsConfig',               # ← uses the UploadsConfig class
     'inference_app.apps.InferenceAppConfig',
     'billing_app.apps.BillingAppConfig',
 ]
@@ -39,7 +38,9 @@ ROOT_URLCONF = 'core_project.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / 'templates'],
+        'DIRS': [                            # ← point here at your one global folder
+            BASE_DIR / 'templates'          # = resit/services/core_project/app/templates
+        ],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [

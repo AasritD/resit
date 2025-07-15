@@ -1,12 +1,12 @@
 # services/core_project/app/billing_app/models.py
 
 from django.db import models
-from django.contrib.auth.models import User
+from django.conf import settings
 from django.urls import reverse
 
 
 class UsageRecord(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     timestamp = models.DateTimeField(auto_now_add=True)
     endpoint = models.CharField(max_length=100)
 
@@ -15,7 +15,7 @@ class UsageRecord(models.Model):
 
 
 class Invoice(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     period_start = models.DateField()
     period_end = models.DateField()
     total_calls = models.IntegerField()
